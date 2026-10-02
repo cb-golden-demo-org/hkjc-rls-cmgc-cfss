@@ -1,0 +1,43 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Travel Enterprise Deployer
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      manifest:
+        type: string
+        required: true
+
+jobs:
+  travel-frontend:
+    if: ${{ fromJSON(inputs.manifest)['travel-frontend']['lsa26/travel-frontend'].deploy }}
+    uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/deploy-frontend.yaml
+    with:
+      artifact-url: ${{ fromJSON(inputs.manifest)['travel-frontend']['lsa26/travel-frontend'].url }}
+      artifact-id: ${{ fromJSON(inputs.manifest)['travel-frontend']['lsa26/travel-frontend'].id }}
+      environment: ${{ inputs.environment }}
+    secrets: inherit
+    vars: inherit
+
+  travel-backend:
+    if: ${{ fromJSON(inputs.manifest)['travel-backend']['lsa26/travel-backend'].deploy }}
+    uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/deploy-backend.yaml
+    with:
+      artifact-url: ${{ fromJSON(inputs.manifest)['travel-backend']['lsa26/travel-backend'].url }}
+      artifact-id: ${{ fromJSON(inputs.manifest)['travel-backend']['lsa26/travel-backend'].id }}
+      environment: ${{ inputs.environment }}
+    secrets: inherit
+    vars: inherit
+
+  travel-payment:
+    if: ${{ fromJSON(inputs.manifest)['travel-payments']['lsa26/travel-payment'].deploy }}
+    uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/deploy-payment.yaml
+    with:
+      artifact-url: ${{ fromJSON(inputs.manifest)['travel-payments']['lsa26/travel-payment'].url }}
+      artifact-id: ${{ fromJSON(inputs.manifest)['travel-payments']['lsa26/travel-payment'].id }}
+      environment: ${{ inputs.environment }}
+    secrets: inherit
+    vars: inherit

@@ -1,0 +1,89 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Travel Enterprise Hotfix
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        type: string
+        required: true
+        description: >
+          System-generated parameter required for application releases.
+          See https://docs.cloudbees.com/docs/cloudbees-platform/latest/applications/releases#manifest
+
+metadata:
+  stages/v1alpha1:
+    - name: Hotfix Approval
+      jobs:
+        - log-hotfix-request
+        - hotfix-approval
+    - name: Production Deploy
+      jobs:
+        - deploy-to-prod
+        - run-smoke-tests
+        - publish-completion
+
+jobs:
+  # ── STAGE 1 : APPROVAL ────────────────────────────────────────────────────
+  log-hotfix-request:
+    steps:
+      - name: Log hotfix request
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Hotfix Request
+            - **Run**: #${{ cloudbees.run_number }}
+            - **Commit**: ${{ cloudbees.scm.sha }}
+            - **Branch**: ${{ cloudbees.scm.branch }}
+
+            > Hotfix bypasses QA and Staging. Production approval required.
+
+            ### Manifest
+            ```json
+            ${{ inputs.manifest }}
+            ```
+
+  hotfix-approval:
+    needs: [log-hotfix-request]
+    timeout-minutes: 120
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: >
+        HOTFIX — This skips QA and Staging gates and deploys directly to Production.
+        Approve only if this is a confirmed critical fix.
+      disallowLaunchByUser: false
+
+  # ── STAGE 2 : PRODUCTION DEPLOY ───────────────────────────────────────────
+  deploy-to-prod:
+    needs: [hotfix-approval]
+    uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: travel-enterprise-prd
+    secrets: inherit
+    vars: inherit
+
+  run-smoke-tests:
+    environment: travel-enterprise-prd
+    needs: [deploy-to-prod]
+    uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/smoke-tests.yaml
+    with:
+      environment: travel-enterprise-prd
+    secrets: inherit
+    vars: inherit
+
+  publish-completion:
+    environment: travel-enterprise-prd
+    needs: [run-smoke-tests]
+    steps:
+      - name: Publish hotfix completion
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Hotfix Deployed
+            - **Environment**: Production
+            - **Run**: #${{ cloudbees.run_number }}
+            - **Commit**: ${{ cloudbees.scm.sha }}
+            - **Smoke tests**: PASSED
+
+            Hotfix successfully applied to Production.

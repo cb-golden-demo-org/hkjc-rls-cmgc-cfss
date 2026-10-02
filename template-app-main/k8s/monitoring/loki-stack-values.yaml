@@ -1,0 +1,116 @@
+# Loki stack Helm values — grafana/loki-stack chart
+# Deploys: Loki (log store) + Promtail (log collector) + Grafana (UI)
+
+loki:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 10Gi
+  config:
+    schema_config:
+      configs:
+        - from: "2024-01-01"
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /data/loki/boltdb-shipper-active
+        cache_location: /data/loki/boltdb-shipper-cache
+        shared_store: filesystem
+      filesystem:
+        directory: /data/loki/chunks
+    limits_config:
+      retention_period: 168h  # 7 days
+
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    scrape_configs:
+      - job_name: travel-enterprise
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - travel-enterprise-qa
+                - travel-enterprise-stg
+                - travel-enterprise-prd
+                - traveldemo
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            target_label: container
+          - source_labels: [__meta_kubernetes_pod_label_version]
+            target_label: version
+          # Image provenance — enables "image → commit SHA → Unify run" tracing
+          - source_labels: [__meta_kubernetes_pod_container_image]
+            target_label: image
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node_name
+        pipeline_stages:
+          - cri: {}
+
+grafana:
+  enabled: true
+  # adminUser / adminPassword are injected at deploy time via --set from
+  # GitHub Secrets (see .github/workflows/deploy-monitoring.yml) — not stored here
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+    hosts:
+      - core.cloudbees.guru
+    path: /grafana
+    pathType: Prefix
+  persistence:
+    enabled: true
+    size: 2Gi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Loki
+          type: loki
+          url: http://loki:3100
+          access: proxy
+          isDefault: true
+          jsonData:
+            maxLines: 5000
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-operated.prometheus.svc.cluster.local:9090
+          access: proxy
+          isDefault: false
+          jsonData:
+            timeInterval: 15s
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: travel-enterprise
+          orgId: 1
+          folder: Travel Enterprise
+          type: file
+          disableDeletion: true
+          options:
+            path: /var/lib/grafana/dashboards/travel-enterprise
+  dashboardsConfigMaps:
+    travel-enterprise: grafana-dashboards
+  grafana.ini:
+    auth.anonymous:
+      enabled: false
+    server:
+      root_url: "https://core.cloudbees.guru/grafana"
+      serve_from_sub_path: true

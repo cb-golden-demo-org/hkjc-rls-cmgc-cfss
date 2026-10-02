@@ -1,0 +1,22 @@
+# Promtail needs read access to pods/logs in travel-enterprise namespaces
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: promtail-travel-enterprise
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/proxy", "services", "endpoints", "pods"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: promtail-travel-enterprise
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: promtail-travel-enterprise
+subjects:
+  - kind: ServiceAccount
+    name: loki-promtail
+    namespace: monitoring

@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+data:
+  travel-enterprise.json: |
+    {
+      "title": "Travel Enterprise — Logs",
+      "uid": "travel-enterprise-logs",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "namespace",
+            "type": "custom",
+            "label": "Environment",
+            "current": { "value": "travel-enterprise-prd", "text": "PRD" },
+            "options": [
+              { "value": "travel-enterprise-prd", "text": "PRD" },
+              { "value": "travel-enterprise-stg", "text": "STG" },
+              { "value": "travel-enterprise-qa",  "text": "QA"  }
+            ]
+          },
+          {
+            "name": "app",
+            "type": "custom",
+            "label": "Service",
+            "current": { "value": "", "text": "All" },
+            "options": [
+              { "value": "",                "text": "All"     },
+              { "value": "travel-backend",  "text": "Backend" },
+              { "value": "travel-frontend", "text": "Frontend"},
+              { "value": "travel-payment",  "text": "Payment" }
+            ]
+          }
+        ]
+      },
+      "panels": [
+        {
+          "type": "logs",
+          "title": "All Logs — $namespace",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+          "datasource": "Loki",
+          "targets": [{
+            "expr": "{namespace=\"$namespace\", app=~\"$app\"}",
+            "refId": "A"
+          }],
+          "options": { "showTime": true, "wrapLogMessage": false, "sortOrder": "Descending" }
+        },
+        {
+          "type": "logs",
+          "title": "Errors — $namespace",
+          "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+          "datasource": "Loki",
+          "targets": [{
+            "expr": "{namespace=\"$namespace\", app=~\"$app\"} |~ \"(?i)error|exception|critical\"",
+            "refId": "A"
+          }],
+          "options": { "showTime": true, "wrapLogMessage": false, "sortOrder": "Descending" }
+        },
+        {
+          "type": "stat",
+          "title": "Error count (last 1h)",
+          "gridPos": { "x": 0, "y": 16, "w": 8, "h": 4 },
+          "datasource": "Loki",
+          "targets": [{
+            "expr": "count_over_time({namespace=\"$namespace\"} |~ \"(?i)error\" [1h])",
+            "refId": "A"
+          }],
+          "options": { "colorMode": "background", "graphMode": "area" },
+          "fieldConfig": { "defaults": { "thresholds": { "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 5 },
+            { "color": "red", "value": 20 }
+          ]}}}
+        },
+        {
+          "type": "stat",
+          "title": "Log rate (lines/min)",
+          "gridPos": { "x": 8, "y": 16, "w": 8, "h": 4 },
+          "datasource": "Loki",
+          "targets": [{
+            "expr": "sum(rate({namespace=\"$namespace\"}[1m]))",
+            "refId": "A"
+          }]
+        }
+      ]
+    }

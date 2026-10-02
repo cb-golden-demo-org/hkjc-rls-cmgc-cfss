@@ -1,0 +1,63 @@
+name: Deploy Backend to GKE
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_url:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/776612895557/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions-traveldemo@cloudbees-sa-emea-demo.iam.gserviceaccount.com
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: cloudbees-core
+          location: europe-west1-d
+          project_id: cloudbees-sa-emea-demo
+
+      - name: Select ROX_SDK_KEY for environment
+        id: rox
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          ROX_QA: ${{ secrets.ROX_SDK_KEY_QA }}
+          ROX_STG: ${{ secrets.ROX_SDK_KEY_STG }}
+          ROX_PRD: ${{ secrets.ROX_SDK_KEY_PRD }}
+        run: |
+          case "$ENVIRONMENT" in
+            travel-enterprise-qa)  echo "key=$ROX_QA"  >> $GITHUB_OUTPUT ;;
+            travel-enterprise-stg) echo "key=$ROX_STG" >> $GITHUB_OUTPUT ;;
+            travel-enterprise-prd) echo "key=$ROX_PRD" >> $GITHUB_OUTPUT ;;
+          esac
+
+      - name: Deploy to GKE
+        env:
+          ARTIFACT_URL: ${{ inputs.artifact_url }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          ROX_SDK_KEY: ${{ steps.rox.outputs.key }}
+        run: |
+          NAMESPACE="${ENVIRONMENT}"
+          kubectl set env deployment/travel-backend ROX_SDK_KEY=$ROX_SDK_KEY -n $NAMESPACE
+          kubectl set image deployment/travel-backend travel-backend=$ARTIFACT_URL -n $NAMESPACE
+          kubectl rollout status deployment/travel-backend -n $NAMESPACE --timeout=5m
+
+      - name: Verify pods
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          kubectl get pods -n travel-${ENVIRONMENT} -l app=travel-backend

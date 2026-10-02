@@ -1,0 +1,95 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: Travel Enterprise Smoke Tests
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+
+jobs:
+  smoke-tests:
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Health checks
+        id: health
+        uses: docker://alpine:3.20
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          apk add --no-cache curl
+
+          BASE="https://core.cloudbees.guru"
+          FAILED=0
+
+          check() {
+            URL="$1"
+            NAME="$2"
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL" || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
+              echo "PASS $NAME ($STATUS)"
+            else
+              echo "FAIL $NAME ($STATUS)"
+              FAILED=$((FAILED+1))
+            fi
+          }
+
+          check "$BASE/$ENVIRONMENT/"             "Frontend"
+          check "$BASE/$ENVIRONMENT/api/health"  "Backend /health"
+          check "$BASE/$ENVIRONMENT/payment/health" "Payment /health"
+
+          echo "$FAILED" > /tmp/failed_count
+          if [ $FAILED -gt 0 ]; then
+            echo "$FAILED service(s) unhealthy"
+            exit 1
+          fi
+          echo "All services healthy"
+
+      - name: Selenium smoke tests
+        id: selenium
+        uses: docker://python:3.13-slim
+        env:
+          APP_URL: https://core.cloudbees.guru/${{ inputs.environment }}
+          SMART_TESTS_TOKEN: ${{ secrets.SMART_TESTS_TOKEN }}
+        run: |
+          pip install --quiet requests
+
+          python3 - <<'EOF'
+          import requests, sys, os
+
+          base = "https://core.cloudbees.guru"
+          env = os.environ.get("APP_URL", "").split("cloudbees.guru")[-1]
+          tests = [
+            (f"{env}/", "Home page loads"),
+            (f"{env}/Flights", "Flights page"),
+            (f"{env}/Hotels", "Hotels page"),
+          ]
+
+          failed = []
+          for path, name in tests:
+            try:
+              r = requests.get(base + path, timeout=15, allow_redirects=True)
+              status = "PASS" if r.status_code < 400 else "FAIL"
+            except Exception as e:
+              status, r = "FAIL", type("r", (), {"status_code": 0})()
+            print(f"{status} {name} ({r.status_code})")
+            if status == "FAIL":
+              failed.append(name)
+
+          if failed:
+            print(f"\n{len(failed)} test(s) failed: {failed}")
+            sys.exit(1)
+          print("\nAll smoke tests passed")
+          EOF
+
+      - name: Publish smoke test evidence
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Smoke Tests — ${{ inputs.environment }}
+            - **Frontend**: health check
+            - **Backend**: /health endpoint
+            - **Payment**: /health endpoint
+            - **UI flows**: Home, Flights, Hotels pages
+            - **Status**: PASSED
