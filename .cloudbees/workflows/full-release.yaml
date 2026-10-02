@@ -7,9 +7,8 @@ on:
       manifest:
         type: string
         required: true
-        description: >
-          System-generated parameter required for application releases.
-          See https://docs.cloudbees.com/docs/cloudbees-platform/latest/applications/releases#manifest
+        description: |
+          System-generated parameter required for application releases. See https://docs.cloudbees.com/docs/cloudbees-platform/latest/applications/releases#manifest
       parent-release-name:
         type: string
         required: false
@@ -43,7 +42,6 @@ metadata:
         - deploy-to-prod
         - run-smoke-tests-prod
         - rollout-flags-prod
-
 jobs:
   gather-evidence:
     steps:
@@ -53,7 +51,6 @@ jobs:
           apk add --no-cache jq
           echo "Manifest received:"
           echo '${{ inputs.manifest }}' | jq .
-
       - name: Fetch Jira tickets per artifact
         id: jira-tickets
         uses: docker://alpine:3.20
@@ -101,7 +98,6 @@ jobs:
 
           cat "$TABLE"
           cp "$TABLE" "$CLOUDBEES_OUTPUTS/table"
-
       - name: Publish release evidence
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -117,9 +113,9 @@ jobs:
             ```
 
             ${{ steps.jira-tickets.outputs.table }}
-
   quality-gate:
-    needs: [gather-evidence]
+    needs:
+      - gather-evidence
     steps:
       - name: Security scan
         uses: docker://alpine:3.20
@@ -128,14 +124,12 @@ jobs:
           sleep 2
           echo "Critical: 0 | High: 0 | Medium: 2 | Low: 8"
           echo "Security gate: PASSED"
-
       - name: Dependency audit
         uses: docker://alpine:3.20
         run: |
           echo "Auditing dependencies..."
           sleep 1
           echo "No critical vulnerabilities found"
-
       - name: Publish quality evidence
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -146,27 +140,27 @@ jobs:
             | Security scan | PASSED (0 critical) |
             | Dependency audit | PASSED |
             | Code quality | PASSED |
-
   approval:
-    needs: [quality-gate]
+    needs:
+      - quality-gate
     timeout-minutes: 60
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
     with:
-      instructions: "Review quality evidence above before approving release to QA."
+      instructions: Review quality evidence above before approving release to QA.
       disallowLaunchByUser: false
-
   deploy-to-qa:
-    needs: [approval]
+    needs:
+      - approval
     uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/deployer.yaml
     with:
       manifest: ${{ inputs.manifest }}
       environment: travel-enterprise-qa
     secrets: inherit
     vars: inherit
-
   enable-flags-qa:
     environment: travel-enterprise-qa
-    needs: [deploy-to-qa]
+    needs:
+      - deploy-to-qa
     steps:
       - name: Enable PremiumHotels on QA
         id: premium_hotels
@@ -180,7 +174,6 @@ jobs:
           flag-config: |
             enabled: true
             defaultValue: true
-
       - name: Enable EarlyBookingDiscount on QA
         id: early_booking
         uses: https://github.com/cloudbees-days/fm-update-flag
@@ -193,7 +186,6 @@ jobs:
           flag-config: |
             enabled: true
             defaultValue: true
-
       - name: Enable NewPaymentFlow on QA
         id: new_payment
         uses: https://github.com/cloudbees-days/fm-update-flag
@@ -206,7 +198,6 @@ jobs:
           flag-config: |
             enabled: true
             defaultValue: true
-
       - name: Publish flag evidence
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -217,19 +208,19 @@ jobs:
             | traveldemo.PremiumHotels | enabled | ${{ steps.premium_hotels.outputs.success }} |
             | traveldemo.EarlyBookingDiscount | enabled | ${{ steps.early_booking.outputs.success }} |
             | traveldemo.NewPaymentFlow | enabled | ${{ steps.new_payment.outputs.success }} |
-
   run-tests-qa:
     environment: travel-enterprise-qa
-    needs: [enable-flags-qa]
+    needs:
+      - enable-flags-qa
     uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/smoke-tests.yaml
     with:
       environment: travel-enterprise-qa
     secrets: inherit
     vars: inherit
-
   exit-criteria-qa:
     environment: travel-enterprise-qa
-    needs: [run-tests-qa]
+    needs:
+      - run-tests-qa
     steps:
       - name: Evaluate QA exit criteria
         uses: docker://alpine:3.20
@@ -239,7 +230,6 @@ jobs:
           echo "  Health checks: PASSED"
           echo "  No P1 issues: CONFIRMED"
           echo "QA gate: PASSED - ready for Staging"
-
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -249,27 +239,27 @@ jobs:
             - Health checks: PASSED
             - No blocking issues
             **Result: APPROVED for Staging**
-
   release-manager-approval:
-    needs: [exit-criteria-qa]
+    needs:
+      - exit-criteria-qa
     timeout-minutes: 4320
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
     with:
-      instructions: "QA passed. Approve to promote to Staging."
+      instructions: QA passed. Approve to promote to Staging.
       disallowLaunchByUser: false
-
   deploy-to-staging:
-    needs: [release-manager-approval]
+    needs:
+      - release-manager-approval
     uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/deployer.yaml
     with:
       manifest: ${{ inputs.manifest }}
       environment: travel-enterprise-stg
     secrets: inherit
     vars: inherit
-
   enable-flags-staging:
     environment: travel-enterprise-stg
-    needs: [deploy-to-staging]
+    needs:
+      - deploy-to-staging
     steps:
       - name: Enable PremiumHotels on Staging
         id: premium_hotels
@@ -283,7 +273,6 @@ jobs:
           flag-config: |
             enabled: true
             defaultValue: true
-
       - name: Enable EarlyBookingDiscount on Staging
         id: early_booking
         uses: https://github.com/cloudbees-days/fm-update-flag
@@ -296,7 +285,6 @@ jobs:
           flag-config: |
             enabled: true
             defaultValue: true
-
       - name: Enable NewPaymentFlow on Staging
         id: new_payment
         uses: https://github.com/cloudbees-days/fm-update-flag
@@ -309,7 +297,6 @@ jobs:
           flag-config: |
             enabled: true
             defaultValue: true
-
       - name: Publish flag evidence
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -320,19 +307,19 @@ jobs:
             | traveldemo.PremiumHotels | enabled | ${{ steps.premium_hotels.outputs.success }} |
             | traveldemo.EarlyBookingDiscount | enabled | ${{ steps.early_booking.outputs.success }} |
             | traveldemo.NewPaymentFlow | enabled | ${{ steps.new_payment.outputs.success }} |
-
   run-tests-staging:
     environment: travel-enterprise-stg
-    needs: [enable-flags-staging]
+    needs:
+      - enable-flags-staging
     uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/smoke-tests.yaml
     with:
       environment: travel-enterprise-stg
     secrets: inherit
     vars: inherit
-
   exit-criteria-staging:
     environment: travel-enterprise-stg
-    needs: [run-tests-staging]
+    needs:
+      - run-tests-staging
     steps:
       - name: Evaluate Staging exit criteria
         uses: docker://alpine:3.20
@@ -342,7 +329,6 @@ jobs:
           echo "  Performance: PASSED"
           echo "  Risk level: LOW"
           echo "Staging gate: PASSED - ready for Production"
-
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -352,34 +338,34 @@ jobs:
             - Performance thresholds: PASSED
             - Risk assessment: LOW
             **Result: APPROVED for Production**
-
   wait-for-snow-change-request:
-    needs: [exit-criteria-staging]
+    needs:
+      - exit-criteria-staging
     uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/sn-approval.yaml
     secrets: inherit
     vars: inherit
-
   deploy-to-prod:
-    needs: [wait-for-snow-change-request]
+    needs:
+      - wait-for-snow-change-request
     uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/deployer.yaml
     with:
       manifest: ${{ inputs.manifest }}
       environment: travel-enterprise-prd
     secrets: inherit
     vars: inherit
-
   run-smoke-tests-prod:
     environment: travel-enterprise-prd
-    needs: [deploy-to-prod]
+    needs:
+      - deploy-to-prod
     uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/smoke-tests.yaml
     with:
       environment: travel-enterprise-prd
     secrets: inherit
     vars: inherit
-
   rollout-flags-prod:
     environment: travel-enterprise-prd
-    needs: [run-smoke-tests-prod]
+    needs:
+      - run-smoke-tests-prod
     timeout-minutes: 15
     steps:
       - name: Get rollout schedule
@@ -389,7 +375,6 @@ jobs:
           echo "$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")" > "$CLOUDBEES_OUTPUTS/now"
           echo "$(date -u -d "@$(( $(date +%s) + 1800 ))" +"%Y-%m-%dT%H:%M:%S.000Z")" > "$CLOUDBEES_OUTPUTS/plus_30_minutes"
           echo "$(date -u -d "@$(( $(date +%s) + 3600 ))" +"%Y-%m-%dT%H:%M:%S.000Z")" > "$CLOUDBEES_OUTPUTS/plus_60_minutes"
-
       - name: Schedule PremiumHotels rollout
         id: premium_hotels_schedule
         uses: https://github.com/cloudbees-days/fm-update-flag
@@ -408,7 +393,6 @@ jobs:
                 percentage: 50
               - from: ${{ steps.rollout_schedule.outputs.plus_60_minutes }}
                 percentage: 100
-
       - name: Enable EarlyBookingDiscount on Production
         id: early_booking_prod
         uses: https://github.com/cloudbees-days/fm-update-flag
@@ -421,7 +405,6 @@ jobs:
           flag-config: |
             enabled: true
             defaultValue: true
-
       - name: Schedule NewPaymentFlow rollout
         id: new_payment_schedule
         uses: https://github.com/cloudbees-days/fm-update-flag
@@ -438,7 +421,6 @@ jobs:
                 percentage: 25
               - from: ${{ steps.rollout_schedule.outputs.plus_60_minutes }}
                 percentage: 100
-
       - name: Publish rollout evidence
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
