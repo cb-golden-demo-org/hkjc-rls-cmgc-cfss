@@ -3,6 +3,12 @@ kind: workflow
 name: cmgc_release_workflow
 on:
   workflow_dispatch:
+    inputs:
+      manifest:
+        type: string
+        required: true
+        description: |
+          System-generated parameter required for application releases. See https://docs.cloudbees.com/docs/cloudbees-platform/latest/applications/releases#manifest
 metadata:
   stages/v1alpha1:
     - name: Readiness
