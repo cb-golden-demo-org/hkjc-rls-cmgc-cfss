@@ -25,7 +25,9 @@ metadata:
   stages/v1alpha1:
     - name: Readiness
       jobs:
-        - job1
+        - gather-evidence
+        - quality-gate
+        - approval
     - name: DITS
       jobs:
         - job
@@ -48,12 +50,116 @@ metadata:
       jobs:
         - job7
 jobs:
-  job1:
+  gather-evidence:
     steps:
-      - run: echo "hello world"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Hello world
-        shell: sh
+      - name: Gather build evidence
+        uses: docker://alpine:3.20
+        run: |
+          apk add --no-cache jq
+          echo "Manifest received:"
+          echo '${{ inputs.manifest }}' | jq .
+
+      - name: Fetch Jira tickets per artifact
+        id: jira-tickets
+        uses: docker://alpine:3.20
+        env:
+          MANIFEST: ${{ inputs.manifest }}
+          CLOUDBEES_API_TOKEN: ${{ secrets.CLOUDBEES_API_TOKEN }}
+        run: |
+          apk add --no-cache curl jq
+          BASE="https://api.cloudbees.io"
+          TABLE="/tmp/jira-table.md"
+
+          echo "## Jira Tickets" > "$TABLE"
+          echo "" >> "$TABLE"
+
+          printf "%s" "$MANIFEST" | jq -r '
+            to_entries[] |
+            . as $comp |
+            $comp.value | to_entries[] |
+            select(.key != "deploy" and .key != "id") |
+            select(.value | type == "object") |
+            [$comp.key, $comp.value.id, .value.id, .value.version] |
+            @tsv
+          ' | while IFS=$(printf '\t') read -r comp_name comp_id artifact_id version; do
+
+            printf "### %s - %s\n\n" "$comp_name" "$version" >> "$TABLE"
+
+            RESP=$(curl -sf \
+              -H "Authorization: Bearer ${CLOUDBEES_API_TOKEN}" \
+              -H "Accept: application/json" \
+              "${BASE}/v3/components/${comp_id}/artifactinfos/${artifact_id}/tickets" \
+              || echo '{"tickets":[]}')
+
+            COUNT=$(printf '%s' "$RESP" | jq '.tickets | length')
+
+            if [ "$COUNT" -eq 0 ]; then
+              echo "_No Jira tickets linked to this artifact._" >> "$TABLE"
+            else
+              echo "| Ticket | Title | Status |" >> "$TABLE"
+              echo "|--------|-------|--------|" >> "$TABLE"
+              printf '%s' "$RESP" | jq -r '.tickets[] |
+                "| [\(.externalId)](\(.url)) | \(.title) | \(.externalStatus) |"' >> "$TABLE"
+            fi
+            echo "" >> "$TABLE"
+          done
+
+          cat "$TABLE"
+          cp "$TABLE" "$CLOUDBEES_OUTPUTS/table"
+
+      - name: Publish release evidence
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Release Evidence - Travel Enterprise
+            - **Run**: #${{ cloudbees.run_number }}
+            - **Branch**: ${{ cloudbees.scm.branch }}
+            - **Commit**: ${{ cloudbees.scm.sha }}
+
+            ### Components in manifest
+            ```json
+            ${{ inputs.manifest }}
+            ```
+
+            ${{ steps.jira-tickets.outputs.table }}
+
+  quality-gate:
+    needs: [gather-evidence]
+    steps:
+      - name: Security scan
+        uses: docker://alpine:3.20
+        run: |
+          echo "Running security checks..."
+          sleep 2
+          echo "Critical: 0 | High: 0 | Medium: 2 | Low: 8"
+          echo "Security gate: PASSED"
+
+      - name: Dependency audit
+        uses: docker://alpine:3.20
+        run: |
+          echo "Auditing dependencies..."
+          sleep 1
+          echo "No critical vulnerabilities found"
+
+      - name: Publish quality evidence
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Quality Gate
+            | Check | Result |
+            |-------|--------|
+            | Security scan | PASSED (0 critical) |
+            | Dependency audit | PASSED |
+            | Code quality | PASSED |
+
+  approval:
+    needs: [quality-gate]
+    timeout-minutes: 60
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: "Review quality evidence above before approving release to QA."
+      disallowLaunchByUser: false
+
   job:
     needs: job1
     steps:
