@@ -31,8 +31,8 @@ metadata:
     - name: DITS
       jobs:
         - deploy-to-dits
-        - run-tests-qa
-        - exit-criteria-qa
+        - run-tests-dits
+        - exit-criteria-dits
     - name: ITES-INT1
       jobs:
         - job2
@@ -165,7 +165,7 @@ jobs:
         uses: docker://golang:1.20.3-alpine3.17
         name: Deploy to DITS
         shell: sh
-  run-tests-qa:
+  run-tests-dits:
     needs:
       - deploy-to-dits
     steps:
@@ -173,9 +173,9 @@ jobs:
         uses: docker://golang:1.20.3-alpine3.17
         name: Run Test on DITS
         shell: sh
-  exit-criteria-qa:
+  exit-criteria-dits:
     needs:
-      - run-tests-qa
+      - run-tests-dits
     steps:
       - run: |
           echo "DITS Test Exit Criteria:"
@@ -196,7 +196,7 @@ jobs:
         name: Publish exit criteria
   job2:
     needs:
-      - exit-criteria-qa
+      - exit-criteria-dits
     steps:
       - run: echo "hello world"
         uses: docker://golang:1.20.3-alpine3.17
