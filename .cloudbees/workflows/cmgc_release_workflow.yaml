@@ -174,27 +174,26 @@ jobs:
         name: Run Test on DITS
         shell: sh
   exit-criteria-qa:
-    needs: [run-tests-qa]
+    needs:
+      - run-tests-qa
     steps:
-      - name: Evaluate DITS exit criteria
-        uses: docker://alpine:3.20
-        run: |
+      - run: |
           echo "DITS Test Exit Criteria:"
           echo "  Smoke tests: PASSED"
           echo "  Health checks: PASSED"
           echo "  No P1 issues: CONFIRMED"
           echo "DITS test gate: PASSED - ready for next stage deployment"
-
-      - name: Publish exit criteria
-        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
-        with:
+        uses: docker://alpine:3.20
+        name: Evaluate DITS exit criteria
+      - with:
           content: |-
             ## DITS Test Exit Criteria
             - Smoke tests: PASSED
             - Health checks: PASSED
             - No blocking issues
             **Result: APPROVED for next stage deployment **
-
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        name: Publish exit criteria
   job2:
     needs:
       - exit-criteria-qa
