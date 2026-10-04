@@ -9,6 +9,18 @@ on:
         required: true
         description: |
           System-generated parameter required for application releases. See https://docs.cloudbees.com/docs/cloudbees-platform/latest/applications/releases#manifest
+      Release_Train:
+        type: string
+        required: true
+        description: Release train that this release is under.
+      Sprint:
+        type: string
+        required: true
+        description: Sprint number
+      Release_Candidate:
+        type: string
+        required: true
+        description: Release candidate
 metadata:
   stages/v1alpha1:
     - name: Readiness
