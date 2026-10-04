@@ -58,7 +58,6 @@ jobs:
           apk add --no-cache jq
           echo "Manifest received:"
           echo '${{ inputs.manifest }}' | jq .
-
       - name: Fetch Jira tickets per artifact
         id: jira-tickets
         uses: docker://alpine:3.20
@@ -106,7 +105,6 @@ jobs:
 
           cat "$TABLE"
           cp "$TABLE" "$CLOUDBEES_OUTPUTS/table"
-
       - name: Publish release evidence
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -122,9 +120,9 @@ jobs:
             ```
 
             ${{ steps.jira-tickets.outputs.table }}
-
   quality-gate:
-    needs: [gather-evidence]
+    needs:
+      - gather-evidence
     steps:
       - name: Security scan
         uses: docker://alpine:3.20
@@ -133,14 +131,12 @@ jobs:
           sleep 2
           echo "Critical: 0 | High: 0 | Medium: 2 | Low: 8"
           echo "Security gate: PASSED"
-
       - name: Dependency audit
         uses: docker://alpine:3.20
         run: |
           echo "Auditing dependencies..."
           sleep 1
           echo "No critical vulnerabilities found"
-
       - name: Publish quality evidence
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -151,22 +147,22 @@ jobs:
             | Security scan | PASSED (0 critical) |
             | Dependency audit | PASSED |
             | Code quality | PASSED |
-
   approval:
-    needs: [quality-gate]
+    needs:
+      - quality-gate
     timeout-minutes: 60
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
     with:
-      instructions: "Review quality evidence above before approving release to QA."
+      instructions: Review quality evidence above before approving release to QA.
       disallowLaunchByUser: false
-
   job:
-    needs: job1
+    needs:
+      - approval
     steps:
-      - name: Say hello
+      - run: echo "hello world"
         uses: docker://golang:1.20.3-alpine3.17
+        name: Say hello
         shell: sh
-        run: echo "hello world"
   job2:
     needs: job
     steps:
