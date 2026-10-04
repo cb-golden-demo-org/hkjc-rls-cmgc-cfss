@@ -30,7 +30,7 @@ metadata:
         - approval
     - name: DITS
       jobs:
-        - job
+        - deploy-to-dits
     - name: ITES-INT1
       jobs:
         - job2
@@ -155,13 +155,13 @@ jobs:
     with:
       instructions: Review quality evidence above before approving release to QA.
       disallowLaunchByUser: false
-  job:
+  deploy-to-dits:
     needs:
       - approval
     steps:
-      - run: echo "hello world"
+      - run: echo "deploying to dits environment"
         uses: docker://golang:1.20.3-alpine3.17
-        name: Say hello
+        name: Deploy to DITS
         shell: sh
   job2:
     needs: job
