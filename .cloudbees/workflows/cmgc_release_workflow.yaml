@@ -1,0 +1,88 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: cmgc_release_workflow
+on:
+  workflow_dispatch:
+metadata:
+  stages/v1alpha1:
+    - name: Readiness
+      jobs:
+        - job1
+    - name: DITS
+      jobs:
+        - job
+    - name: ITES-INT1
+      jobs:
+        - job2
+    - name: AUT
+      jobs:
+        - job3
+    - name: SIT
+      jobs:
+        - job4
+    - name: UAT1
+      jobs:
+        - job5
+    - name: UAT2
+      jobs:
+        - job6
+    - name: SAT1
+      jobs:
+        - job7
+jobs:
+  job1:
+    steps:
+      - run: echo "hello world"
+        uses: docker://golang:1.20.3-alpine3.17
+        name: Hello world
+        shell: sh
+  job:
+    needs: job1
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: echo "hello world"
+  job2:
+    needs: job
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: echo "hello world"
+  job3:
+    needs: job2
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: echo "hello world"
+  job4:
+    needs: job3
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: echo "hello world"
+  job5:
+    needs: job4
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: echo "hello world"
+  job6:
+    needs: job5
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: echo "hello world"
+  job7:
+    needs:
+      - job6
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: echo "hello world"
