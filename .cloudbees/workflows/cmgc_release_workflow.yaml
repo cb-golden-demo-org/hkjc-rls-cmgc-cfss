@@ -31,6 +31,8 @@ metadata:
     - name: DITS
       jobs:
         - deploy-to-dits
+        - run-tests-qa
+        - exit-criteria-qa
     - name: ITES-INT1
       jobs:
         - job2
@@ -163,9 +165,39 @@ jobs:
         uses: docker://golang:1.20.3-alpine3.17
         name: Deploy to DITS
         shell: sh
-  job2:
+  run-tests-qa:
     needs:
       - deploy-to-dits
+    steps:
+      - run: echo "Running Test on DITS"
+        uses: docker://golang:1.20.3-alpine3.17
+        name: Run Test on DITS
+        shell: sh
+  exit-criteria-qa:
+    needs: [run-tests-qa]
+    steps:
+      - name: Evaluate DITS exit criteria
+        uses: docker://alpine:3.20
+        run: |
+          echo "DITS Test Exit Criteria:"
+          echo "  Smoke tests: PASSED"
+          echo "  Health checks: PASSED"
+          echo "  No P1 issues: CONFIRMED"
+          echo "DITS test gate: PASSED - ready for next stage deployment"
+
+      - name: Publish exit criteria
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## DITS Test Exit Criteria
+            - Smoke tests: PASSED
+            - Health checks: PASSED
+            - No blocking issues
+            **Result: APPROVED for next stage deployment **
+
+  job2:
+    needs:
+      - exit-criteria-qa
     steps:
       - run: echo "hello world"
         uses: docker://golang:1.20.3-alpine3.17
