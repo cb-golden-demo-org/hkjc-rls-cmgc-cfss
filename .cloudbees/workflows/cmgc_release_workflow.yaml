@@ -74,6 +74,7 @@ metadata:
         - wait-for-snow-change-request
         - deploy-to-prod
         - run-smoke-tests-prod
+        - PROD-deployment-closure
 
 jobs:
   gather-evidence:
@@ -517,3 +518,10 @@ jobs:
             - E2E tests: PASSED
             - Risk assessment: LOW
             **Result: PROD Deployment Complete**
+  PROD-deployment-closure:
+    needs: run-smoke-tests-prod
+    timeout-minutes: 60
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: Close production deployment.
+      disallowLaunchByUser: false
