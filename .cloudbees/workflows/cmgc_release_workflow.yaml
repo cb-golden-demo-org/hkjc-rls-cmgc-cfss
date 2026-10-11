@@ -51,6 +51,9 @@ metadata:
     - name: SAT1
       jobs:
         - job7
+    - name: PROD
+      jobs:
+        - job
 jobs:
   gather-evidence:
     steps:
@@ -123,8 +126,7 @@ jobs:
 
             ${{ steps.jira-tickets.outputs.table }}
   quality-gate:
-    needs:
-      - gather-evidence
+    needs: gather-evidence
     steps:
       - name: Security scan
         uses: docker://alpine:3.20
@@ -150,32 +152,28 @@ jobs:
             | Dependency audit | PASSED |
             | Code quality | PASSED |
   approval:
-    needs:
-      - quality-gate
+    needs: quality-gate
     timeout-minutes: 60
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
     with:
       instructions: Review quality evidence above before approving release to QA.
       disallowLaunchByUser: false
   deploy-to-dits:
-    needs:
-      - approval
+    needs: approval
     steps:
       - run: echo "deploying to dits environment"
         uses: docker://golang:1.20.3-alpine3.17
         name: Deploy to DITS
         shell: sh
   run-tests-dits:
-    needs:
-      - deploy-to-dits
+    needs: deploy-to-dits
     steps:
       - run: echo "Running Test on DITS"
         uses: docker://golang:1.20.3-alpine3.17
         name: Run Test on DITS
         shell: sh
   exit-criteria-dits:
-    needs:
-      - run-tests-dits
+    needs: run-tests-dits
     steps:
       - run: |
           echo "DITS Test Exit Criteria:"
@@ -195,8 +193,7 @@ jobs:
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         name: Publish exit criteria
   job2:
-    needs:
-      - exit-criteria-dits
+    needs: exit-criteria-dits
     steps:
       - run: echo "hello world"
         uses: docker://golang:1.20.3-alpine3.17
@@ -231,8 +228,15 @@ jobs:
         shell: sh
         run: echo "hello world"
   job7:
+    needs: job6
+    steps:
+      - name: Say hello
+        uses: docker://golang:1.20.3-alpine3.17
+        shell: sh
+        run: echo "hello world"
+  job:
     needs:
-      - job6
+      - job7
     steps:
       - name: Say hello
         uses: docker://golang:1.20.3-alpine3.17
