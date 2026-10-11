@@ -189,12 +189,14 @@ jobs:
     vars: inherit
   run-tests-dits:
     needs: deploy-to-dits
-    uses: cloudbees-io/jenkins-run-job@v2
-    with:
-      url: https://sda.preview.cb-demos.io/westest/
-      username: ${{ secrets.WES_JENKINS_USERNAME }}
-      token: ${{ secrets.WES_JENKINS_TOKEN }}
-      job-name: WesTestJob
+    steps:
+      - kind: test
+        uses: cloudbees-io/jenkins-run-job@v2
+        with:
+          url: https://sda.preview.cb-demos.io/westest/
+          username: ${{ secrets.WES_JENKINS_USERNAME }}
+          token: ${{ secrets.WES_JENKINS_TOKEN }}
+          job-name: WesTestJob
   exit-criteria-dits:
     needs: run-tests-dits
     steps:
