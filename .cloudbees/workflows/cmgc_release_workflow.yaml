@@ -226,11 +226,12 @@ jobs:
   deploy-to-ITWS-INT1:
     needs:
       - ITWS-INT1-manager-approval
-    steps:
-      - run: echo "deploying to ITWS-INT1 environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Deploy to ITWS-INT1
-        shell: sh
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: ITWS-INT1
+    secrets: inherit
+    vars: inherit
   run-tests-ITWS-INT1:
     environment: ITWS-INT1
     needs:
