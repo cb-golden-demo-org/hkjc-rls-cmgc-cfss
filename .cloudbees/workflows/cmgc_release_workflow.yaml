@@ -35,7 +35,10 @@ metadata:
         - exit-criteria-dits
     - name: ITWS-INT1
       jobs:
-        - job2
+        - ITWS-INT1-manager-approval
+        - deploy-to-ITWS-INT1
+        - run-tests-ITWS-INT1
+        - exit-criteria-ITWS-INT1
     - name: AUT
       jobs:
         - job3
@@ -192,15 +195,50 @@ jobs:
             **Result: APPROVED for next stage deployment **
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         name: Publish exit criteria
-  job2:
-    needs: exit-criteria-dits
+  ITWS-INT1-manager-approval:
+    needs: [exit-criteria-dits]
+    timeout-minutes: 4320
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: "Approve to promote to ITWS-INT1."
+      disallowLaunchByUser: false
+  deploy-to-ITWS-INT1:
+    needs: [ITWS-INT1-manager-approval]
     steps:
-      - run: echo "hello world"
+      - run: echo "deploying to ITWS-INT1 environment"
         uses: docker://golang:1.20.3-alpine3.17
-        name: Say hello
+        name: Deploy to ITWS-INT1
         shell: sh
+  run-tests-ITWS-INT1:
+    environment: ITWS-INT1:
+    needs: [ITWS-INT1-manager-approval]
+    steps:
+      - run: echo "Running ITWS-INT1 tests ..."
+        uses: docker://golang:1.20.3-alpine3.17
+        name: Run ITWS-INT1 tests
+        shell: sh
+  exit-criteria-ITWS-INT1:
+    environment: ITWS-INT1
+    needs: [run-tests-ITWS-INT1]
+    steps:
+      - name: Evaluate ITWS-INT1 exit criteria
+        uses: docker://alpine:3.20
+        run: |
+          echo "Staging Exit Criteria:"
+          echo "  E2E tests: PASSED"
+          echo "  Risk level: LOW"
+          echo "ITWS-INT1 gate: PASSED - ready for AUT”
+
+      - name: Publish exit criteria
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Staging Exit Criteria
+            - E2E tests: PASSED
+            - Risk assessment: LOW
+            **Result: APPROVED for AUT**  
   job3:
-    needs: job2
+    needs: exit-criteria-ITWS-INT1
     steps:
       - name: Say hello
         uses: docker://golang:1.20.3-alpine3.17
