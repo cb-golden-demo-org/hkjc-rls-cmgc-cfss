@@ -33,7 +33,7 @@ metadata:
         - deploy-to-dits
         - run-tests-dits
         - exit-criteria-dits
-    - name: ITES-INT1
+    - name: ITWS-INT1
       jobs:
         - job2
     - name: AUT
