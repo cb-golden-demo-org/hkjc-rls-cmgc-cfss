@@ -344,7 +344,7 @@ jobs:
             ## SIT Exit Criteria
             - E2E tests: PASSED
             - Risk assessment: LOW
-            **Result: APPROVED for SIT**
+            **Result: APPROVED for UAT1**
   UAT1-manager-approval:
     needs:
       - exit-criteria-SIT
@@ -468,11 +468,11 @@ jobs:
       - name: Evaluate SAT1 exit criteria
         uses: docker://alpine:3.20
         run: |
-          echo “SAT1 Exit Criteria:"
+          echo "AUT Exit Criteria:"
           echo "  E2E tests: PASSED"
-          echo "  Performance: PASSED"
+          echo "  Performance tests: PASSED"
           echo "  Risk level: LOW"
-          echo "  Gate PASSED and ready for SAT1"
+          echo "  Gate PASSED and ready for PROD"
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -481,7 +481,7 @@ jobs:
             - E2E tests: PASSED
             - Performance thresholds: PASSED
             - Risk assessment: LOW
-            **Result: APPROVED for SAT1**
+            **Result: APPROVED for PROD**
   job:
     needs:
       - exit-criteria-SAT1
