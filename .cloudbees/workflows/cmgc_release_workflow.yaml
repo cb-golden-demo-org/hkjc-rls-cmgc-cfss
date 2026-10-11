@@ -41,10 +41,16 @@ metadata:
         - exit-criteria-ITWS-INT1
     - name: AUT
       jobs:
-        - job3
+        - AUT-manager-approval
+        - deploy-to-AUT
+        - run-tests-AUT
+        - exit-criteria-AUT
     - name: SIT
       jobs:
-        - job4
+        - SIT-manager-approval
+        - deploy-to-SIT
+        - run-tests-SIT
+        - exit-criteria-SIT
     - name: UAT1
       jobs:
         - job5
@@ -228,7 +234,7 @@ jobs:
       - name: Evaluate ITWS-INT1 exit criteria
         uses: docker://alpine:3.20
         run: |
-          echo "Staging Exit Criteria:"
+          echo "ITWS-INT1 Exit Criteria:"
           echo "  E2E tests: PASSED"
           echo "  Risk level: LOW"
           echo "  Gate PASSED and ready for AUT"
@@ -236,26 +242,102 @@ jobs:
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
           content: |-
-            ## Staging Exit Criteria
+            ## ITWS-INT1 Exit Criteria
             - E2E tests: PASSED
             - Risk assessment: LOW
             **Result: APPROVED for AUT**  
-  job3:
-    needs: exit-criteria-ITWS-INT1
+  AUT-manager-approval:
+    needs:
+      - exit-criteria-ITWS-INT1
+    timeout-minutes: 4320
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: Approve to promote to AUT.
+      disallowLaunchByUser: false
+  deploy-to-AUT:
+    needs:
+      - AUT-manager-approval
     steps:
-      - name: Say hello
+      - run: echo "deploying to AUT environment"
         uses: docker://golang:1.20.3-alpine3.17
+        name: Deploy to AUT
         shell: sh
-        run: echo "hello world"
-  job4:
-    needs: job3
+  run-tests-AUT:
+    environment: AUT
+    needs:
+      - deploy-to-AUT
     steps:
-      - name: Say hello
+      - run: echo "Running AUT tests ..."
         uses: docker://golang:1.20.3-alpine3.17
+        name: Run AUT tests
         shell: sh
-        run: echo "hello world"
+  exit-criteria-AUT:
+    environment: AUT
+    needs:
+      - run-tests-AUT
+    steps:
+      - name: Evaluate AUT exit criteria
+        uses: docker://alpine:3.20
+        run: |
+          echo “AUT Exit Criteria:"
+          echo "  E2E tests: PASSED"
+          echo "  Risk level: LOW"
+          echo "  Gate PASSED and ready for AUT"
+      - name: Publish exit criteria
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## AUT Exit Criteria
+            - E2E tests: PASSED
+            - Risk assessment: LOW
+            **Result: APPROVED for SIT**  
+  SIT-manager-approval:
+    needs:
+      - exit-criteria-AUT
+    timeout-minutes: 4320
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: Approve to promote to SIT.
+      disallowLaunchByUser: false
+  deploy-to-SIT:
+    needs:
+      - SIT-manager-approval
+    steps:
+      - run: echo "deploying to SIT environment"
+        uses: docker://golang:1.20.3-alpine3.17
+        name: Deploy to SIT
+        shell: sh
+  run-tests-SIT:
+    environment: SIT
+    needs:
+      - deploy-to-SIT
+    steps:
+      - run: echo "Running SIT tests ..."
+        uses: docker://golang:1.20.3-alpine3.17
+        name: Run SIT tests
+        shell: sh
+  exit-criteria-SIT:
+    environment: SIT
+    needs:
+      - run-tests-SIT
+    steps:
+      - name: Evaluate SIT exit criteria
+        uses: docker://alpine:3.20
+        run: |
+          echo “SIT Exit Criteria:"
+          echo "  E2E tests: PASSED"
+          echo "  Risk level: LOW"
+          echo "  Gate PASSED and ready for SIT"
+      - name: Publish exit criteria
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## SIT Exit Criteria
+            - E2E tests: PASSED
+            - Risk assessment: LOW
+            **Result: APPROVED for SIT**
   job5:
-    needs: job4
+    needs: exit-criteria-SIT
     steps:
       - name: Say hello
         uses: docker://golang:1.20.3-alpine3.17
