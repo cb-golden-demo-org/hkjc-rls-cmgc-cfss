@@ -190,13 +190,13 @@ jobs:
   run-tests-dits:
     needs: deploy-to-dits
     steps:
-      - kind: test
-        uses: cloudbees-io/jenkins-run-job@v2
-        with:
+      - with:
           url: https://sda.preview.cb-demos.io/westest/
-          username: ${{ secrets.WES_JENKINS_USERNAME }}
-          token: ${{ secrets.WES_JENKINS_TOKEN }}
+          username: admin
+          token: ${{ secrets.jenkinstoken }}
           job-name: WesTestJob
+        kind: test
+        uses: cloudbees-io/jenkins-run-job@v2
   exit-criteria-dits:
     needs: run-tests-dits
     steps:
