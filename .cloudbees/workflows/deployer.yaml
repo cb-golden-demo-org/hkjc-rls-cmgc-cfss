@@ -34,8 +34,8 @@ jobs:
     if: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-web']['hackers-web'].deploy }}
     uses: cb-golden-demo-org/hackers-klee-rodemo-web/.cloudbees/workflows/deploy.yaml
     with:
-      artifact-url: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-web']['hackers-web'].url }}
-      artifact-id: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-web']['hackers-web'].id }}
+      artifact-url: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cess-frontend-tr']['hackers-web'].url }}
+      artifact-id: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cess-frontend-tr']['hackers-web'].id }}
       environment: ${{ inputs.environment }}
     secrets: inherit
     vars: inherit
