@@ -31,7 +31,7 @@ jobs:
     secrets: inherit
     vars: inherit
   hackers-web:
-    if: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-web']['hackers-web'].deploy }}
+    if: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cess-frontend-tr']['hackers-web'].deploy }}
     uses: cb-golden-demo-org/hackers-klee-rodemo-web/.cloudbees/workflows/deploy.yaml
     with:
       artifact-url: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cess-frontend-tr']['hackers-web'].url }}
