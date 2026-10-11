@@ -12,24 +12,6 @@ on:
         required: true
 
 jobs:
-  hackers-api:
-    if: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-api']['hackers-api'].deploy }}
-    uses: cb-golden-demo-org/hackers-klee-rodemo-api/.cloudbees/workflows/deploy.yaml
-    with:
-      artifact-url: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-api']['hackers-api'].url }}
-      artifact-id: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-api']['hackers-api'].id }}
-      environment: ${{ inputs.environment }}
-    secrets: inherit
-    vars: inherit
-  hackers-auth:
-    if: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-auth']['hackers-auth'].deploy }}
-    uses: cb-golden-demo-org/hackers-klee-rodemo-auth/.cloudbees/workflows/deploy.yaml
-    with:
-      artifact-url: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-auth']['hackers-auth'].url }}
-      artifact-id: ${{ fromJSON(inputs.manifest)['hackers-klee-rodemo-auth']['hackers-auth'].id }}
-      environment: ${{ inputs.environment }}
-    secrets: inherit
-    vars: inherit
   hackers-web:
     if: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cess-frontend-tr']['hackers-web'].deploy }}
     uses: cb-golden-demo-org/hackers-klee-rodemo-web/.cloudbees/workflows/deploy.yaml
