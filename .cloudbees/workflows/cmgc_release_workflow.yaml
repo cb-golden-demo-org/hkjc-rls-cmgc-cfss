@@ -53,13 +53,22 @@ metadata:
         - exit-criteria-SIT
     - name: UAT1
       jobs:
-        - job5
+        - UAT1-manager-approval
+        - deploy-to-UAT1
+        - run-tests-UAT1
+        - exit-criteria-UAT1    
     - name: UAT2
       jobs:
-        - job6
+        - UAT2-manager-approval
+        - deploy-to-UAT2
+        - run-tests-UAT2
+        - exit-criteria-UAT2
     - name: SAT1
       jobs:
-        - job7
+        - SAT1-manager-approval
+        - deploy-to-SAT1
+        - run-tests-SAT1
+        - exit-criteria-SAT1
     - name: PROD
       jobs:
         - job
@@ -336,30 +345,146 @@ jobs:
             - E2E tests: PASSED
             - Risk assessment: LOW
             **Result: APPROVED for SIT**
-  job5:
-    needs: exit-criteria-SIT
+  UAT1-manager-approval:
+    needs:
+      - exit-criteria-SIT
+    timeout-minutes: 4320
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: Approve to promote to UAT1.
+      disallowLaunchByUser: false
+  deploy-to-UAT1:
+    needs:
+      - UAT1-manager-approval
     steps:
-      - name: Say hello
+      - run: echo "deploying to UAT1 environment"
         uses: docker://golang:1.20.3-alpine3.17
+        name: Deploy to UAT1
         shell: sh
-        run: echo "hello world"
-  job6:
-    needs: job5
+  run-tests-UAT1:
+    environment: UAT1
+    needs:
+      - deploy-to-UAT1
     steps:
-      - name: Say hello
+      - run: echo "Running UAT1 tests ..."
         uses: docker://golang:1.20.3-alpine3.17
+        name: Run UAT1 tests
         shell: sh
-        run: echo "hello world"
-  job7:
-    needs: job6
+  exit-criteria-UAT1:
+    environment: UAT1
+    needs:
+      - run-tests-UAT1
     steps:
-      - name: Say hello
+      - name: Evaluate UAT1 exit criteria
+        uses: docker://alpine:3.20
+        run: |
+          echo “UAT1 Exit Criteria:"
+          echo "  E2E tests: PASSED"
+          echo "  Risk level: LOW"
+          echo "  Gate PASSED and ready for UAT1"
+      - name: Publish exit criteria
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## UAT1 Exit Criteria
+            - E2E tests: PASSED
+            - Risk assessment: LOW
+            **Result: APPROVED for UAT1**
+  UAT2-manager-approval:
+    needs:
+      - exit-criteria-UAT1
+    timeout-minutes: 4320
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: Approve to promote to UAT2.
+      disallowLaunchByUser: false
+  deploy-to-UAT2:
+    needs:
+      - UAT2-manager-approval
+    steps:
+      - run: echo "deploying to UAT2 environment"
         uses: docker://golang:1.20.3-alpine3.17
+        name: Deploy to UAT2
         shell: sh
-        run: echo "hello world"
+  run-tests-UAT2:
+    environment: UAT2
+    needs:
+      - deploy-to-UAT2
+    steps:
+      - run: echo "Running UAT2 tests ..."
+        uses: docker://golang:1.20.3-alpine3.17
+        name: Run UAT2 tests
+        shell: sh
+  exit-criteria-UAT2:
+    environment: UAT2
+    needs:
+      - run-tests-UAT2
+    steps:
+      - name: Evaluate UAT2 exit criteria
+        uses: docker://alpine:3.20
+        run: |
+          echo “UAT2 Exit Criteria:"
+          echo "  E2E tests: PASSED"
+          echo "  Risk level: LOW"
+          echo "  Gate PASSED and ready for UAT2"
+      - name: Publish exit criteria
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## UAT2 Exit Criteria
+            - E2E tests: PASSED
+            - Risk assessment: LOW
+            **Result: APPROVED for UAT2**
+  SAT1-manager-approval:
+    needs:
+      - exit-criteria-UAT2
+    timeout-minutes: 4320
+    delegates: cloudbees-io/manual-approval/custom-job.yml@v1
+    with:
+      instructions: Approve to promote to SAT1.
+      disallowLaunchByUser: false
+  deploy-to-SAT1:
+    needs:
+      - SAT1-manager-approval
+    steps:
+      - run: echo "deploying to SAT1 environment"
+        uses: docker://golang:1.20.3-alpine3.17
+        name: Deploy to SAT1
+        shell: sh
+  run-tests-SAT1:
+    environment: SAT1
+    needs:
+      - deploy-to-SAT1
+    steps:
+      - run: echo "Running SAT1 tests ..."
+        uses: docker://golang:1.20.3-alpine3.17
+        name: Run SAT1 tests
+        shell: sh
+  exit-criteria-SAT1:
+    environment: SAT1
+    needs:
+      - run-tests-SAT1
+    steps:
+      - name: Evaluate SAT1 exit criteria
+        uses: docker://alpine:3.20
+        run: |
+          echo “SAT1 Exit Criteria:"
+          echo "  E2E tests: PASSED"
+          echo "  Performance: PASSED"
+          echo "  Risk level: LOW"
+          echo "  Gate PASSED and ready for SAT1"
+      - name: Publish exit criteria
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## SAT1 Exit Criteria
+            - E2E tests: PASSED
+            - Performance thresholds: PASSED
+            - Risk assessment: LOW
+            **Result: APPROVED for SAT1**
   job:
     needs:
-      - job7
+      - exit-criteria-SAT1
     steps:
       - name: Say hello
         uses: docker://golang:1.20.3-alpine3.17
