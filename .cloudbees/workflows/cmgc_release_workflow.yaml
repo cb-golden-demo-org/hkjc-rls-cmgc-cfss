@@ -190,11 +190,14 @@ jobs:
     vars: inherit  
   run-tests-dits:
     needs: deploy-to-dits
-    steps:
-      - run: echo "Running tests on DITS environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Run Tests on DITS
-        shell: sh
+    kind: test
+    uses: cloudbees-io/jenkins-run-job@v2
+    continue-on-error: true
+      with:
+        url: https://sda.preview.cb-demos.io/westest/
+        username: ${{ secrets.WES_JENKINS_USERNAME }}
+        token: ${{ secrets.WES_JENKINS_TOKEN }}
+        job-name: WesTestJob
   exit-criteria-dits:
     needs: run-tests-dits
     steps:
