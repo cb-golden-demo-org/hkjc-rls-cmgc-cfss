@@ -291,7 +291,7 @@ jobs:
           echo "AUT Exit Criteria:"
           echo "  E2E tests: PASSED"
           echo "  Risk level: LOW"
-          echo "  Gate PASSED and ready for UAT1"
+          echo "  Gate PASSED and ready for SIT"
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -333,10 +333,10 @@ jobs:
       - name: Evaluate SIT exit criteria
         uses: docker://alpine:3.20
         run: |
-          echo “SIT Exit Criteria:"
+          echo "AUT Exit Criteria:"
           echo "  E2E tests: PASSED"
           echo "  Risk level: LOW"
-          echo "  Gate PASSED and ready for SIT"
+          echo "  Gate PASSED and ready for UAT1"
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -378,10 +378,10 @@ jobs:
       - name: Evaluate UAT1 exit criteria
         uses: docker://alpine:3.20
         run: |
-          echo “UAT1 Exit Criteria:"
+          echo "AUT Exit Criteria:"
           echo "  E2E tests: PASSED"
           echo "  Risk level: LOW"
-          echo "  Gate PASSED and ready for UAT1"
+          echo "  Gate PASSED and ready for UAT2"
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -389,7 +389,7 @@ jobs:
             ## UAT1 Exit Criteria
             - E2E tests: PASSED
             - Risk assessment: LOW
-            **Result: APPROVED for UAT1**
+            **Result: APPROVED for UAT2**
   UAT2-manager-approval:
     needs:
       - exit-criteria-UAT1
@@ -423,10 +423,10 @@ jobs:
       - name: Evaluate UAT2 exit criteria
         uses: docker://alpine:3.20
         run: |
-          echo “UAT2 Exit Criteria:"
+          echo "AUT Exit Criteria:"
           echo "  E2E tests: PASSED"
           echo "  Risk level: LOW"
-          echo "  Gate PASSED and ready for UAT2"
+          echo "  Gate PASSED and ready for SAT"
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
@@ -434,7 +434,7 @@ jobs:
             ## UAT2 Exit Criteria
             - E2E tests: PASSED
             - Risk assessment: LOW
-            **Result: APPROVED for UAT2**
+            **Result: APPROVED for SAT**
   SAT1-manager-approval:
     needs:
       - exit-criteria-UAT2
