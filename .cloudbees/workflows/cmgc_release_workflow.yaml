@@ -189,11 +189,12 @@ jobs:
         shell: sh
   run-tests-dits:
     needs: deploy-to-dits
-    steps:
-      - run: echo "Running Test on DITS"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Run Test on DITS
-        shell: sh
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: DITS
+    secrets: inherit
+    vars: inherit  
   exit-criteria-dits:
     needs: run-tests-dits
     steps:
