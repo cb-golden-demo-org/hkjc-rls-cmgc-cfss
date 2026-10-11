@@ -272,11 +272,12 @@ jobs:
   deploy-to-AUT:
     needs:
       - AUT-manager-approval
-    steps:
-      - run: echo "deploying to AUT environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Deploy to AUT
-        shell: sh
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: AUT
+    secrets: inherit
+    vars: inherit
   run-tests-AUT:
     environment: AUT
     needs:
@@ -317,11 +318,12 @@ jobs:
   deploy-to-SIT:
     needs:
       - SIT-manager-approval
-    steps:
-      - run: echo "deploying to SIT environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Deploy to SIT
-        shell: sh
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: SIT
+    secrets: inherit
+    vars: inherit
   run-tests-SIT:
     environment: SIT
     needs:
@@ -362,11 +364,12 @@ jobs:
   deploy-to-UAT1:
     needs:
       - UAT1-manager-approval
-    steps:
-      - run: echo "deploying to UAT1 environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Deploy to UAT1
-        shell: sh
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: UAT1
+    secrets: inherit
+    vars: inherit
   run-tests-UAT1:
     environment: UAT1
     needs:
@@ -407,11 +410,12 @@ jobs:
   deploy-to-UAT2:
     needs:
       - UAT2-manager-approval
-    steps:
-      - run: echo "deploying to UAT2 environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Deploy to UAT2
-        shell: sh
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: UAT2
+    secrets: inherit
+    vars: inherit
   run-tests-UAT2:
     environment: UAT2
     needs:
@@ -452,11 +456,12 @@ jobs:
   deploy-to-SAT1:
     needs:
       - SAT1-manager-approval
-    steps:
-      - run: echo "deploying to SAT1 environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Deploy to SAT1
-        shell: sh
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: SAT1
+    secrets: inherit
+    vars: inherit
   run-tests-SAT1:
     environment: SAT1
     needs:
@@ -495,11 +500,12 @@ jobs:
     vars: inherit
   deploy-to-prod:
     needs: [wait-for-snow-change-request]
-    steps:
-      - run: echo "deploying to PROD environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Deploy to PROD
-        shell: sh
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: PROD
+    secrets: inherit
+    vars: inherit
   run-smoke-tests-prod:
     environment: PROD
     needs:
