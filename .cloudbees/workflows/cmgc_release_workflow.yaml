@@ -288,10 +288,10 @@ jobs:
       - name: Evaluate AUT exit criteria
         uses: docker://alpine:3.20
         run: |
-          echo “AUT Exit Criteria:"
+          echo "AUT Exit Criteria:"
           echo "  E2E tests: PASSED"
           echo "  Risk level: LOW"
-          echo "  Gate PASSED and ready for AUT"
+          echo "  Gate PASSED and ready for UAT1"
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
