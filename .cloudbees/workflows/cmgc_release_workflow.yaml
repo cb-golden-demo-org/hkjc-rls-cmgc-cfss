@@ -191,9 +191,9 @@ jobs:
     needs: deploy-to-dits
     steps:
       - with:
-          url: https://sda.preview.cb-demos.io/westest/
-          username: admin
-          token: ${{ secrets.jenkinstoken }}
+          url: ${{ secrets.JENKINS_URL }}
+          username: ${{ secrets.JENKINS_USERNAME }}
+          token: ${{ secrets.JENKINS_TOKEN }}
           job-name: WesTestJob
         kind: test
         uses: cloudbees-io/jenkins-run-job@v2
