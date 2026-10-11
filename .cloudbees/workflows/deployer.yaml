@@ -14,7 +14,7 @@ on:
 jobs:
   hackers-web:
     if: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cess-frontend-tr']['hackers-web'].deploy }}
-    uses: cb-golden-demo-org/hackers-klee-rodemo-web/.cloudbees/workflows/deploy.yaml
+    uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deploy.yaml
     with:
       artifact-url: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cess-frontend-tr']['hackers-web'].url }}
       artifact-id: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cess-frontend-tr']['hackers-web'].id }}
