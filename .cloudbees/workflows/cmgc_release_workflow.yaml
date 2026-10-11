@@ -188,11 +188,6 @@ jobs:
       environment: DITS
     secrets: inherit
     vars: inherit  
-    steps:
-      - run: echo "deploying to dits environment"
-        uses: docker://golang:1.20.3-alpine3.17
-        name: Deploy to DITS
-        shell: sh
   run-tests-dits:
     needs: deploy-to-dits
     steps:
