@@ -56,7 +56,7 @@ metadata:
         - UAT1-manager-approval
         - deploy-to-UAT1
         - run-tests-UAT1
-        - exit-criteria-UAT1    
+        - exit-criteria-UAT1
     - name: UAT2
       jobs:
         - UAT2-manager-approval
@@ -75,7 +75,6 @@ metadata:
         - deploy-to-prod
         - run-smoke-tests-prod
         - PROD-deployment-closure
-
 jobs:
   gather-evidence:
     steps:
@@ -187,17 +186,15 @@ jobs:
       manifest: ${{ inputs.manifest }}
       environment: DITS
     secrets: inherit
-    vars: inherit  
+    vars: inherit
   run-tests-dits:
     needs: deploy-to-dits
-    kind: test
     uses: cloudbees-io/jenkins-run-job@v2
-    continue-on-error: true
-      with:
-        url: https://sda.preview.cb-demos.io/westest/
-        username: ${{ secrets.WES_JENKINS_USERNAME }}
-        token: ${{ secrets.WES_JENKINS_TOKEN }}
-        job-name: WesTestJob
+    with:
+      url: https://sda.preview.cb-demos.io/westest/
+      username: ${{ secrets.WES_JENKINS_USERNAME }}
+      token: ${{ secrets.WES_JENKINS_TOKEN }}
+      job-name: WesTestJob
   exit-criteria-dits:
     needs: run-tests-dits
     steps:
@@ -497,12 +494,14 @@ jobs:
             - Risk assessment: LOW
             **Result: APPROVED for PROD**
   wait-for-snow-change-request:
-    needs: [exit-criteria-SAT1]
+    needs:
+      - exit-criteria-SAT1
     uses: cb-golden-demo-org/hackers-klee-rodemo-app/.cloudbees/workflows/sn-approval.yaml
     secrets: inherit
     vars: inherit
   deploy-to-prod:
-    needs: [wait-for-snow-change-request]
+    needs:
+      - wait-for-snow-change-request
     uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
     with:
       manifest: ${{ inputs.manifest }}
