@@ -231,7 +231,7 @@ jobs:
           echo "Staging Exit Criteria:"
           echo "  E2E tests: PASSED"
           echo "  Risk level: LOW"
-          echo "ITWS-INT1 gate: PASSED - ready for AUT”
+          echo "  Gate PASSED and ready for AUT"
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
