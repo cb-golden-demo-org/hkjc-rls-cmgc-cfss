@@ -71,7 +71,10 @@ metadata:
         - exit-criteria-SAT1
     - name: PROD
       jobs:
-        - job
+        - wait-for-snow-change-request
+        - deploy-to-prod
+        - run-smoke-tests-prod
+
 jobs:
   gather-evidence:
     steps:
@@ -482,11 +485,35 @@ jobs:
             - Performance thresholds: PASSED
             - Risk assessment: LOW
             **Result: APPROVED for PROD**
-  job:
-    needs:
-      - exit-criteria-SAT1
+  wait-for-snow-change-request:
+    needs: [exit-criteria-SAT1]
+    uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/sn-approval.yaml
+    secrets: inherit
+    vars: inherit
+  deploy-to-prod:
+    needs: [wait-for-snow-change-request]
     steps:
-      - name: Say hello
+      - run: echo "deploying to PROD environment"
         uses: docker://golang:1.20.3-alpine3.17
+        name: Deploy to PROD
         shell: sh
-        run: echo "hello world"
+  run-smoke-tests-prod:
+    environment: PROD
+    needs:
+      - deploy-to-prod
+    steps:
+      - name: Evaluate PROD smoke test
+        uses: docker://alpine:3.20
+        run: |
+          echo "PROD smoke tests:"
+          echo "  E2E tests: PASSED"
+          echo "  Risk level: LOW"
+          echo "  PROD deployment complete"
+      - name: Publish exit criteria
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## PROD Smoke Test
+            - E2E tests: PASSED
+            - Risk assessment: LOW
+            **Result: PROD Deployment Complete**
