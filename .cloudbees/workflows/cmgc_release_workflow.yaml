@@ -196,22 +196,25 @@ jobs:
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         name: Publish exit criteria
   ITWS-INT1-manager-approval:
-    needs: [exit-criteria-dits]
+    needs:
+      - exit-criteria-dits
     timeout-minutes: 4320
     delegates: cloudbees-io/manual-approval/custom-job.yml@v1
     with:
-      instructions: "Approve to promote to ITWS-INT1."
+      instructions: Approve to promote to ITWS-INT1.
       disallowLaunchByUser: false
   deploy-to-ITWS-INT1:
-    needs: [ITWS-INT1-manager-approval]
+    needs:
+      - ITWS-INT1-manager-approval
     steps:
       - run: echo "deploying to ITWS-INT1 environment"
         uses: docker://golang:1.20.3-alpine3.17
         name: Deploy to ITWS-INT1
         shell: sh
   run-tests-ITWS-INT1:
-    environment: ITWS-INT1:
-    needs: [ITWS-INT1-manager-approval]
+    environment: ITWS-INT1
+    needs:
+      - deploy-to-ITWS-INT1
     steps:
       - run: echo "Running ITWS-INT1 tests ..."
         uses: docker://golang:1.20.3-alpine3.17
@@ -219,7 +222,8 @@ jobs:
         shell: sh
   exit-criteria-ITWS-INT1:
     environment: ITWS-INT1
-    needs: [run-tests-ITWS-INT1]
+    needs:
+      - run-tests-ITWS-INT1
     steps:
       - name: Evaluate ITWS-INT1 exit criteria
         uses: docker://alpine:3.20
@@ -228,7 +232,6 @@ jobs:
           echo "  E2E tests: PASSED"
           echo "  Risk level: LOW"
           echo "ITWS-INT1 gate: PASSED - ready for AUT”
-
       - name: Publish exit criteria
         uses: https://github.com/cloudbees-io/publish-evidence-item@v1
         with:
