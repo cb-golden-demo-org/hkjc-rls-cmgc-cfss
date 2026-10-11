@@ -488,7 +488,7 @@ jobs:
             **Result: APPROVED for PROD**
   wait-for-snow-change-request:
     needs: [exit-criteria-SAT1]
-    uses: cb-golden-demo-org/lsa26-travelenterprise-app/.cloudbees/workflows/sn-approval.yaml
+    uses: cb-golden-demo-org/hackers-klee-rodemo-app/.cloudbees/workflows/sn-approval.yaml
     secrets: inherit
     vars: inherit
   deploy-to-prod:
