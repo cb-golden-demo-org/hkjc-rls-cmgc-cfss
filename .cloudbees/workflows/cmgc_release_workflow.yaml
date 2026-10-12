@@ -231,7 +231,7 @@ jobs:
     uses: cb-golden-demo-org/hkjc-rls-cmgc-cfss/.cloudbees/workflows/deployer.yaml
     with:
       manifest: ${{ inputs.manifest }}
-      environment: ITWS-INT2
+      environment: ITWS-INT1
     secrets: inherit
     vars: inherit
   run-tests-ITWS-INT1:
