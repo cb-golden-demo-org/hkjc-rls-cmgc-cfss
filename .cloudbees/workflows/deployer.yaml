@@ -30,12 +30,3 @@ jobs:
       environment: ${{ inputs.environment }}
     secrets: inherit
     vars: inherit
-  hackers-auth:
-    if: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cfss-tool-tr']['hackers-auth'].deploy }}
-    uses: cb-golden-demo-org/hkjc_rls_cmgc_cfss_cfss-tool-tr/.cloudbees/workflows/deploy.yaml
-    with:
-      artifact-url: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cfss-tool-tr']['hackers-auth'].url }}
-      artifact-id: ${{ fromJSON(inputs.manifest)['hkjc_rls_cmgc_cfss_cfss-tool-tr']['hackers-auth'].id }}
-      environment: ${{ inputs.environment }}
-    secrets: inherit
-    vars: inherit
